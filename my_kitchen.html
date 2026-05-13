@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MY KITCHEN - Recipe Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .bg-animation {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; opacity: 0.15;
+        }
+        .bg-animation span {
+            position: absolute; display: block; width: 20px; height: 20px;
+            background: rgba(255,255,255,0.2); border-radius: 50%;
+            animation: float 25s infinite linear;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; } 90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+        .header {
+            position: relative; z-index: 10;
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+            padding: 20px; text-align: center;
+            border-bottom: 2px solid rgba(212,175,55,0.5);
+        }
+        .header h1 {
+            font-family: 'Playfair Display', serif; font-size: 3rem;
+            color: #d4af37; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); letter-spacing: 3px;
+        }
+        .header p { color: #ccc; margin-top: 5px; font-size: 1rem; }
+        .search-section {
+            position: relative; z-index: 10; padding: 30px 20px;
+            text-align: center; background: rgba(0,0,0,0.3);
+        }
+        .search-container { max-width: 600px; margin: 0 auto; position: relative; }
+        .search-bar {
+            width: 100%; padding: 15px 50px 15px 20px;
+            border: 2px solid #d4af37; border-radius: 50px;
+            background: rgba(255,255,255,0.1); color: #fff; font-size: 1rem;
+            outline: none; transition: all 0.3s ease; backdrop-filter: blur(10px);
+        }
+        .search-bar::placeholder { color: rgba(255,255,255,0.6); }
+        .search-bar:focus {
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 0 20px rgba(212,175,55,0.3);
+        }
+        .search-btn {
+            position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+            background: #d4af37; border: none; padding: 10px 20px;
+            border-radius: 50px; color: #1a1a2e; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .search-btn:hover { background: #f4cf57; transform: translateY(-50%) scale(1.05); }
+        .countries-section {
+            position: relative; z-index: 10; padding: 20px;
+            background: rgba(0,0,0,0.2);
+        }
+        .countries-container {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+        }
+        .country-tab {
+            padding: 12px 25px; border: 2px solid transparent; border-radius: 30px;
+            background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+            backdrop-filter: blur(5px);
+        }
+        .country-tab:hover {
+            background: rgba(212,175,55,0.3); border-color: #d4af37;
+            transform: translateY(-2px);
+        }
+        .country-tab.active {
+            background: #d4af37; color: #1a1a2e;
+            border-color: #d4af37; font-weight: 600;
+        }
+        .country-flag { font-size: 1.2rem; }
+        .content-area {
+            position: relative; z-index: 10; padding: 30px 20px;
+            max-width: 1200px; margin: 0 auto;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif; font-size: 2rem;
+            color: #d4af37; margin-bottom: 20px; text-align: center;
+        }
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;
+        }
+        .recipe-card {
+            background: rgba(255,255,255,0.08); border-radius: 20px;
+            overflow: hidden; cursor: pointer; transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+        }
+        .recipe-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-color: #d4af37;
+        }
+        .recipe-image {
+            width: 100%; height: 200px; object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .recipe-card:hover .recipe-image { transform: scale(1.1); }
+        .recipe-info { padding: 20px; }
+        .recipe-name { font-size: 1.2rem; font-weight: 600; color: #fff; margin-bottom: 8px; }
+        .recipe-country { color: #d4af37; font-size: 0.9rem; margin-bottom: 10px; }
+        .recipe-desc { color: #aaa; font-size: 0.85rem; line-height: 1.5; }
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            z-index: 1000; overflow-y: auto; padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #1e1e3f 0%, #2a2a5a 100%);
+            border-radius: 25px; max-width: 800px; width: 100%;
+            margin: 20px auto; overflow: hidden;
+            border: 2px solid #d4af37; position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(255,255,255,0.2); border: none;
+            width: 40px; height: 40px; border-radius: 50%;
+            color: #fff; font-size: 1.5rem; cursor: pointer;
+            z-index: 10; transition: all 0.3s ease;
+        }
+        .modal-close:hover { background: #d4af37; color: #1a1a2e; }
+        .modal-image { width: 100%; height: 350px; object-fit: cover; }
+        .modal-body { padding: 30px; }
+        .modal-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: #d4af37; margin-bottom: 10px; }
+        .modal-country { color: #aaa; margin-bottom: 20px; font-size: 1rem; }
+        .ingredients-section, .instructions-section { margin-bottom: 25px; }
+        .section-heading {
+            font-size: 1.3rem; color: #fff; margin-bottom: 15px;
+            padding-bottom: 10px; border-bottom: 2px solid #d4af37;
+            display: inline-block;
+        }
+        .ingredients-list {
+            list-style: none;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;
+        }
+        .ingredients-list li {
+            background: rgba(255,255,255,0.1); padding: 10px 15px;
+            border-radius: 10px; color: #ddd; font-size: 0.9rem;
+            border-left: 3px solid #d4af37;
+        }
+        .instructions-list { list-style: none; counter-reset: step; }
+        .instructions-list li {
+            position: relative; padding-left: 50px; margin-bottom: 20px;
+            color: #ddd; line-height: 1.7;
+        }
+        .instructions-list li::before {
+            counter-increment: step; content: counter(step);
+            position: absolute; left: 0; top: 0; width: 35px; height: 35px;
+            background: #d4af37; color: #1a1a2e; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.9rem;
+        }
+        .cooking-time {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(212,175,55,0.2); padding: 8px 16px;
+            border-radius: 20px; color: #d4af37; font-size: 0.9rem; margin-top: 10px;
+        }
+        .no-results { text-align: center; padding: 50px; color: #aaa; }
+        .no-results h3 { color: #d4af37; margin-bottom: 10px; font-size: 1.5rem; }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .country-tab { padding: 10px 18px; font-size: 0.9rem; }
+            .recipe-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+            .modal-image { height: 250px; }
+            .modal-title { font-size: 1.5rem; }
+            .ingredients-list { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.5rem; }
+            .recipe-grid { grid-template-columns: 1fr; }
+            .modal-body { padding: 20px; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="bg-animation" id="bgAnimation"></div>
+    <div class="header">
+        <h1>👨‍🍳 MY KITCHEN</h1>
+        <p>Discover Authentic Recipes From Around The World</p>
+    </div>
+    <div class="search-section">
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchBar" placeholder="Search for any food... (e.g., Nasi Lemak, Biryani, Burger)">
+            <button class="search-btn" onclick="performSearch()">🔍 Search</button>
+        </div>
+    </div>
+    <div class="countries-section">
+        <div class="countries-container" id="countryTabs">
+            <div class="country-tab active" data-country="all" onclick="filterByCountry('all')"><span>🌍</span> All Countries</div>
+            <div class="country-tab" data-country="popular" onclick="filterByCountry('popular')"><span>⭐</span> Popular</div>
+            <div class="country-tab" data-country="malaysia" onclick="filterByCountry('malaysia')"><span class="country-flag">🇲🇾</span> Malaysia</div>
+            <div class="country-tab" data-country="india" onclick="filterByCountry('india')"><span class="country-flag">🇮🇳</span> India</div>
+            <div class="country-tab" data-country="indonesia" onclick="filterByCountry('indonesia')"><span class="country-flag">🇮🇩</span> Indonesia</div>
+            <div class="country-tab" data-country="america" onclick="filterByCountry('america')"><span class="country-flag">🇺🇸</span> America</div>
+            <div class="country-tab" data-country="colombia" onclick="filterByCountry('colombia')"><span class="country-flag">🇨🇴</span> Colombia</div>
+            <div class="country-tab" data-country="saudi" onclick="filterByCountry('saudi')"><span class="country-flag">🇸🇦</span> Saudi Arabia</div>
+        </div>
+    </div>
+    <div class="content-area">
+        <h2 class="section-title" id="sectionTitle">🌍 All Recipes</h2>
+        <div class="recipe-grid" id="recipeGrid"></div>
+    </div>
+    <div class="modal-overlay" id="recipeModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <img class="modal-image" id="modalImage" src="" alt="">
+            <div class="modal-body">
+                <h2 class="modal-title" id="modalTitle"></h2>
+                <p class="modal-country" id="modalCountry"></p>
+                <div class="cooking-time" id="modalTime"></div>
+                <div class="ingredients-section">
+                    <h3 class="section-heading">📝 Ingredients</h3>
+                    <ul class="ingredients-list" id="modalIngredients"></ul>
+                </div>
+                <div class="instructions-section">
+                    <h3 class="section-heading">👨‍🍳 Instructions</h3>
+                    <ol class="instructions-list" id="modalInstructions"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const recipes = [
+    // MALAYSIA
+    {id:1,name:"Nasi Lemak",country:"malaysia",countryName:"Malaysia",image:"https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=600",description:"Malaysia's national dish - fragrant rice cooked in coconut milk, served with sambal, anchovies, and peanuts.",time:"45 mins",ingredients:["2 cups jasmine rice","1 can coconut milk (400ml)","3 pandan leaves","1 ginger slice","2 shallots (sliced)","1 cup dried anchovies","1 cup raw peanuts","4 hard-boiled eggs","1 cucumber (sliced)","Sambal: 10 dried chilies, 5 shallots, 3 garlic, 1 tbsp shrimp paste, 1 tbsp tamarind, 2 tbsp sugar, salt"],instructions:["Wash rice and drain. Combine rice, coconut milk, pandan leaves, ginger, and salt in rice cooker. Add water to usual level and cook until fluffy.","For sambal: Soak dried chilies in hot water for 15 min, drain and blend with shallots, garlic, and shrimp paste.","Heat oil and fry blended paste for 10 min until oil separates. Add tamarind paste, sugar, and salt. Simmer 5 min.","Fry anchovies in hot oil until crispy (3 min). Fry peanuts until golden (2-3 min).","Assemble: Place coconut rice on plate, top with sambal, anchovies, peanuts, cucumber slices, and halved eggs. Serve hot."]},
+    {id:2,name:"Char Kway Teow",country:"malaysia",countryName:"Malaysia",image:"https://images.unsplash.com/photo-1552611052-33e04de081de?w=600",description:"Stir-fried flat rice noodles with prawns, cockles, bean sprouts, and dark soy sauce.",time:"20 mins",ingredients:["400g flat rice noodles","200g prawns (peeled)","100g cockles or squid","100g bean sprouts","2 Chinese sausages (sliced)","4 cloves garlic (minced)","2 eggs","3 tbsp dark soy sauce","1 tbsp light soy sauce","1 tbsp chili paste","2 tbsp oil","Chives (2-inch pieces)","Salt and white pepper"],instructions:["Heat wok until smoking. Add oil, garlic, and Chinese sausage. Stir-fry 30 sec.","Add prawns and cockles. Stir-fry 1 min until prawns turn pink.","Push ingredients aside. Crack eggs into empty space and scramble.","Add noodles, dark soy sauce, light soy sauce, and chili paste. Toss on high heat for 2-3 min.","Add bean sprouts and chives. Stir-fry 30 sec. Season with salt and pepper. Serve immediately."]},
+    {id:3,name:"Rendang",country:"malaysia",countryName:"Malaysia",image:"https://images.unsplash.com/photo-1603088549196-592435659c6d?w=600",description:"Slow-cooked beef in coconut milk and spice paste until caramelized and tender.",time:"3 hours",ingredients:["1kg beef (chuck, cut into chunks)","2 cans coconut milk (800ml)","3 kaffir lime leaves","2 turmeric leaves","1 lemongrass stalk (bruised)","2 tbsp tamarind paste","1 tbsp brown sugar","Spice paste: 10 shallots, 5 garlic, 3cm ginger, 3cm galangal, 5 dried chilies, 1 tsp coriander, 1 tsp cumin, 1/2 tsp fennel","Toasted coconut: 1 cup desiccated coconut, dry-fried until golden"],instructions:["Blend spice paste ingredients with water until smooth.","Heat heavy pot. Cook spice paste 10 min until fragrant and oil separates.","Add beef chunks, cook 5 min until sealed. Pour in coconut milk, add lemongrass, lime leaves, turmeric leaves. Bring to boil.","Reduce heat, cover, simmer 2 hours. Stir occasionally.","Remove lid, increase heat. Add tamarind and sugar. Cook uncovered 45 min until sauce thickens and caramelizes.","Stir in toasted coconut in last 15 min. Serve when sauce is almost dry and dark brown."]},
+    {id:4,name:"Laksa",country:"malaysia",countryName:"Malaysia",image:"https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600",description:"Spicy noodle soup with coconut curry broth, chicken, and tofu puffs.",time:"1 hour",ingredients:["200g rice noodles","300g chicken breast","1 can coconut milk (400ml)","500ml chicken stock","10 tofu puffs (halved)","100g bean sprouts","2 hard-boiled eggs (quartered)","Laksa paste: 10 dried chilies, 5 shallots, 3 garlic, 2cm galangal, 2cm turmeric, 1 tbsp shrimp paste, 1 tsp coriander, 2 candlenuts","Garnish: Vietnamese mint, cucumber strips, fish cake slices"],instructions:["Blend laksa paste ingredients with 2 tbsp water until smooth.","Heat oil in large pot. Fry laksa paste 8-10 min until fragrant and oil rises.","Add chicken stock and coconut milk. Bring to boil, then simmer 15 min.","Add chicken breast, poach 15 min until cooked. Remove, shred, and set aside.","Add tofu puffs to broth, simmer 5 min.","Blanch noodles and bean sprouts in boiling water 30 sec each. Drain.","To serve: Place noodles in bowl, top with chicken, tofu puffs, bean sprouts, and eggs. Ladle hot broth over. Garnish with mint and cucumber."]},
+    {id:5,name:"Roti Canai",country:"malaysia",countryName:"Malaysia",image:"https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600",description:"Flaky, crispy flatbread served with dal curry or sugar.",time:"1 hour 30 mins",ingredients:["3 cups all-purpose flour","1 cup warm water","2 tbsp condensed milk","1 egg","2 tbsp ghee","1 tsp salt","1 tbsp sugar","Extra ghee for frying","Dal curry or sugar for serving"],instructions:["Mix flour, salt, and sugar. Make a well. Whisk egg, condensed milk, and warm water. Pour in and mix to soft dough.","Knead 10 min until smooth. Divide into 8 balls. Coat with ghee, rest 4 hours (or overnight).","Flatten dough ball on oiled surface. Stretch and slap until paper-thin.","Fold like an envelope: top and bottom to center, then left and right, creating layers.","Heat flat pan with ghee. Place folded dough, flatten slightly. Fry 2-3 min per side until golden and crispy.","Clap cooked roti between hands to fluff layers. Serve hot with dal curry or sugar."]},
+    {id:6,name:"Satay",country:"malaysia",countryName:"Malaysia",image:"https://images.unsplash.com/photo-1529563021893-cc83c992d75d?w=600",description:"Grilled marinated meat skewers served with peanut sauce.",time:"2 hours",ingredients:["500g chicken thigh (cut into strips)","20 bamboo skewers (soaked)","Marinade: 2 tbsp curry powder, 1 tbsp turmeric, 2 shallots minced, 2 garlic minced, 1 tbsp brown sugar, 2 tbsp oil, 1 tsp salt","Peanut sauce: 1 cup roasted peanuts (ground), 1 can coconut milk, 2 tbsp curry powder, 1 tbsp sugar, 1 tbsp tamarind, 2 shallots, 2 dried chilies","Cucumber chunks and onion wedges"],instructions:["Mix marinade into paste. Coat meat and marinate at least 1 hour (preferably overnight).","Thread 3-4 meat strips onto each skewer, weaving in and out.","For peanut sauce: Blend shallots and chilies. Fry in oil 3 min. Add curry powder, stir 1 min.","Add coconut milk, ground peanuts, sugar, and tamarind. Simmer 15 min until thick.","Preheat grill to high. Brush with oil. Grill skewers 3-4 min per side, basting with marinade, until charred.","Serve hot with peanut sauce, cucumber, and onion wedges."]},
+    // INDIA
+    {id:7,name:"Chicken Biryani",country:"india",countryName:"India",image:"https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600",description:"Fragrant basmati rice layered with spiced chicken, saffron, and fried onions.",time:"1 hour 30 mins",ingredients:["500g basmati rice","1kg chicken (cut into pieces)","2 large onions (fried crispy)","1 cup plain yogurt","2 tomatoes (chopped)","Marinade: 2 tbsp ginger-garlic paste, 2 tbsp biryani masala, 1 tsp turmeric, 1 tsp chili powder, 1/2 cup mint, 1/2 cup cilantro, 3 green chilies, 2 tbsp lemon juice, salt","Whole spices: 2 bay leaves, 4 cardamom, 4 cloves, 2 cinnamon, 1 star anise","Saffron in 3 tbsp warm milk","Ghee for cooking"],instructions:["Marinate chicken with yogurt, ginger-garlic paste, biryani masala, turmeric, chili powder, mint, cilantro, chilies, lemon juice, and salt for 2 hours.","Wash and soak rice 30 min. Boil water with whole spices and salt. Cook rice 70% done (6-7 min). Drain.","Heat ghee in heavy pot. Add marinated chicken, cook 15 min until partially cooked.","Layer half par-cooked rice over chicken. Sprinkle half onions, saffron milk, and ghee.","Add remaining rice, top with remaining onions, saffron milk, and ghee. Cover tightly with foil and lid.","Cook on low heat (dum) for 30 min. Or bake at 180C for 25 min.","Rest 10 min before opening. Gently fluff and mix. Serve with raita."]},
+    {id:8,name:"Butter Chicken",country:"india",countryName:"India",image:"https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600",description:"Tandoori chicken in a rich, creamy tomato-butter gravy.",time:"1 hour",ingredients:["800g chicken thighs (boneless, cut into pieces)","Marinade: 1/2 cup yogurt, 1 tbsp ginger-garlic paste, 1 tsp turmeric, 1 tsp garam masala, 1 tsp chili powder, 1 tbsp lemon juice, salt","Gravy: 3 tbsp butter, 2 tbsp oil, 2 onions (finely chopped), 2 tsp ginger-garlic paste, 400g tomato puree, 1 tsp chili powder, 1 tsp garam masala, 1/2 tsp fenugreek leaves, 1 cup heavy cream, 2 tbsp honey, salt","Fresh cilantro for garnish"],instructions:["Marinate chicken in yogurt, ginger-garlic paste, turmeric, garam masala, chili powder, lemon juice, and salt for 1 hour.","Grill chicken at 220C for 20 min, turning once, until charred. Or pan-fry until golden.","For gravy: Heat butter and oil. Saute onions until golden (10 min).","Add ginger-garlic paste, cook 2 min. Add tomato puree, chili powder, and salt. Simmer 15 min until oil separates.","Blend tomato mixture until smooth. Return to pan. Add grilled chicken, simmer 10 min.","Stir in cream, honey, and crushed fenugreek leaves. Simmer 5 min on low. Do not boil.","Garnish with cream swirl and cilantro. Serve with naan or basmati rice."]},
+    {id:9,name:"Masala Dosa",country:"india",countryName:"India",image:"https://images.unsplash.com/photo-1662116765994-53592f6f0e5a?w=600",description:"Crispy fermented rice crepe filled with spiced potato masala.",time:"24 hours",ingredients:["2 cups rice (idli rice)","1/2 cup urad dal (split black lentils)","1/4 tsp fenugreek seeds","Salt to taste","Oil for cooking","Potato filling: 4 large potatoes (boiled, mashed), 2 onions (sliced), 2 green chilies, 1 tsp mustard seeds, 1 tsp turmeric, 10 curry leaves, 2 tbsp oil, salt","Coconut chutney and sambar for serving"],instructions:["Wash and soak rice, urad dal, and fenugreek separately for 6 hours.","Drain and grind urad dal to smooth fluffy batter. Transfer to large bowl.","Grind rice to slightly coarse batter. Mix with urad dal batter. Add salt, mix with hands.","Cover and ferment in warm place 8-12 hours. Batter should double and become bubbly.","For filling: Heat oil, add mustard seeds, let splutter. Add curry leaves, chilies, onions. Saute until golden.","Add turmeric and mashed potatoes. Mix well, add salt, cook 5 min. Set aside.","Heat flat non-stick pan. Pour ladle of batter in center, spread in circular motion to make thin crepe.","Drizzle oil around edges. Cook until golden and crispy. Place filling in center, fold, and serve hot with chutney and sambar."]},
+    {id:10,name:"Palak Paneer",country:"india",countryName:"India",image:"https://images.unsplash.com/photo-1606471191009-63994c53433b?w=600",description:"Cottage cheese cubes in a smooth, spiced spinach gravy.",time:"40 mins",ingredients:["500g fresh spinach","250g paneer (cubed)","2 onions (chopped)","2 tomatoes (chopped)","1 tbsp ginger-garlic paste","2 green chilies","1 tsp cumin seeds","1 tsp garam masala","1/2 tsp turmeric","1/2 cup heavy cream","2 tbsp oil or ghee","Salt to taste"],instructions:["Blanch spinach in boiling water 2 min. Transfer to ice water to retain green color.","Drain and blend spinach with green chilies into smooth puree. Set aside.","Heat oil. Add cumin seeds, let splutter. Add onions, saute until golden.","Add ginger-garlic paste, cook 2 min. Add tomatoes, turmeric, and salt. Cook until mushy (8 min).","Add spinach puree, simmer 5 min. Add garam masala.","Gently add paneer cubes, simmer 5 min. Do not break paneer.","Stir in cream, cook 2 more min on low. Do not boil after adding cream.","Serve hot with naan, roti, or jeera rice."]},
+    {id:11,name:"Tandoori Chicken",country:"india",countryName:"India",image:"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=600",description:"Yogurt-marinated chicken roasted with aromatic spices.",time:"4 hours",ingredients:["1 whole chicken (cut into 8 pieces)","1 cup thick yogurt","2 tbsp ginger-garlic paste","2 tbsp tandoori masala","1 tsp red chili powder","1 tsp turmeric","1 tsp garam masala","2 tbsp lemon juice","2 tbsp mustard oil","1 tsp kasuri methi","Red food color (optional, 1/4 tsp)","Salt to taste","Onion rings and lemon wedges"],instructions:["Make deep cuts in chicken pieces so marinade penetrates deeply.","Mix yogurt, ginger-garlic paste, tandoori masala, chili powder, turmeric, garam masala, lemon juice, mustard oil, kasuri methi, food color, and salt into thick marinade.","Coat chicken thoroughly. Cover and refrigerate at least 3 hours, preferably overnight.","Preheat oven to 220C. Place wire rack on foil-lined baking tray.","Arrange marinated chicken on rack. Bake 25-30 min, turning once halfway.","For charred spots, switch to broil for last 5 min. Baste with melted butter.","Check internal temp reaches 74C. Chicken should be charred outside and juicy inside.","Sprinkle with chaat masala, garnish with onion rings and lemon. Serve hot with mint chutney."]},
+    {id:12,name:"Chole Bhature",country:"india",countryName:"India",image:"https://images.unsplash.com/photo-1626139576127-452296008812?w=600",description:"Spicy chickpea curry served with deep-fried fluffy bread.",time:"1 hour 30 mins",ingredients:["Chole: 2 cups chickpeas (soaked overnight), 2 onions, 2 tomatoes (pureed), 2 tbsp ginger-garlic paste, 2 green chilies, 2 tbsp chole masala, 1 tsp turmeric, 1 tsp chili powder, 1 tsp amchur, 2 tbsp oil, 1 tea bag, salt","Bhature: 2 cups all-purpose flour, 1/4 cup semolina, 1/2 cup yogurt, 1 tsp sugar, 1/2 tsp baking soda, salt, oil for deep frying","Pickled onions and green chutney"],instructions:["Pressure cook soaked chickpeas with tea bag, salt, and water for 6-7 whistles until very soft. Discard tea bag.","Heat oil. Add onions, saute until golden. Add ginger-garlic paste and green chilies. Cook 2 min.","Add tomato puree, turmeric, chili powder, and chole masala. Cook until oil separates (10 min).","Add cooked chickpeas with some cooking water. Simmer 15 min. Mash some chickpeas to thicken gravy.","Add amchur and adjust consistency. Chole should be thick but not dry. Garnish with ginger and cilantro.","For bhature: Mix flour, semolina, yogurt, sugar, baking soda, and salt. Knead into soft dough with warm water. Rest 30 min.","Divide into balls, roll into oval shapes (not too thin).","Deep fry in hot oil. They should puff up immediately. Fry until golden brown on both sides.","Serve hot chole with fluffy bhature, pickled onions, and chutney."]},
+
+    // INDONESIA
+    {id:13,name:"Nasi Goreng",country:"indonesia",countryName:"Indonesia",image:"https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600",description:"Indonesian fried rice with sweet soy sauce, shrimp paste, and a fried egg on top.",time:"30 mins",ingredients:["3 cups cooked jasmine rice (day-old, cold)","2 chicken breasts (diced) or 200g shrimp","2 eggs","3 shallots (minced)","3 garlic cloves (minced)","2 red chilies (minced)","2 tbsp kecap manis (sweet soy sauce)","1 tbsp shrimp paste (terasi), toasted","1 tsp tamarind paste","1 cup cabbage (shredded)","2 spring onions (sliced)","Cucumber and tomato slices for garnish","Fried shallots for topping","Krupuk (prawn crackers) for serving"],instructions:["Heat oil in wok on high heat. Fry eggs sunny-side up. Remove and set aside.","Add shallots, garlic, and chilies. Stir-fry 1 min until fragrant.","Add chicken or shrimp. Cook until done (3-4 min).","Add cold rice, breaking up clumps. Stir-fry on high heat for 3 min.","Add kecap manis, shrimp paste, and tamarind. Toss everything together until rice is evenly coated and caramelized.","Add cabbage and spring onions. Stir-fry 1 more min.","Serve on plate, top with fried egg. Garnish with cucumber, tomato, fried shallots, and krupuk on the side."]},
+    {id:14,name:"Rendang Padang",country:"indonesia",countryName:"Indonesia",image:"https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600",description:"West Sumatran beef rendang - darker, drier, and more intensely spiced than Malaysian version.",time:"4 hours",ingredients:["1.5kg beef (brisket or chuck, cut into chunks)","2 cans thick coconut milk (800ml)","3 kaffir lime leaves","2 turmeric leaves","2 lemongrass stalks (bruised)","3 tbsp tamarind paste","2 tbsp palm sugar","Spice paste: 15 shallots, 8 garlic cloves, 5cm ginger, 5cm galangal, 10 dried chilies, 2 tsp coriander, 1 tsp cumin, 1 tsp fennel, 1/2 tsp nutmeg, 1/2 tsp cloves","Toasted coconut (kerisik): 1.5 cups desiccated coconut, dry-fried until dark golden"],instructions:["Blend spice paste ingredients with minimal water until very smooth.","Heat heavy-bottomed pot (preferably cast iron). Cook spice paste on medium heat 15 min until very fragrant and dark.","Add beef chunks, stir to coat. Cook 5 min until sealed on all sides.","Pour in coconut milk, add lemongrass, lime leaves, and turmeric leaves. Bring to gentle boil.","Reduce to lowest heat, cover, and simmer 2.5 hours. Stir every 20 min to prevent sticking.","Remove lid, increase heat slightly. Add tamarind and palm sugar.","Continue cooking uncovered 1 hour, stirring frequently, until sauce is almost completely absorbed and beef is dark brown.","Stir in toasted coconut in last 20 min. The rendang is ready when it is dark, dry, and oily. Serve with steamed rice."]},
+    {id:15,name:"Sate Ayam",country:"indonesia",countryName:"Indonesia",image:"https://images.unsplash.com/photo-1529563021893-cc83c992d75d?w=600",description:"Indonesian chicken satay with rich peanut sauce and lontong rice cakes.",time:"1 hour 30 mins",ingredients:["600g chicken thigh (cut into bite-sized pieces)","20 bamboo skewers (soaked)","Marinade: 3 shallots, 3 garlic cloves, 1 tsp coriander, 1/2 tsp cumin, 1 tbsp kecap manis, 1 tbsp oil, 1/2 tsp turmeric, salt","Peanut sauce: 1.5 cups roasted peanuts (ground), 1 can coconut milk, 2 shallots, 3 garlic cloves, 3 red chilies, 1 tbsp kecap manis, 1 tbsp tamarind, 1/2 tsp shrimp paste, salt","Lontong (compressed rice cakes) or steamed rice","Pickled cucumber and shallots"],instructions:["Blend marinade ingredients into smooth paste. Coat chicken pieces thoroughly. Marinate 1 hour.","Thread 4-5 chicken pieces onto each skewer, leaving small gaps between pieces.","For peanut sauce: Blend shallots, garlic, and chilies. Fry in oil 3 min until fragrant.","Add ground peanuts, coconut milk, kecap manis, tamarind, and shrimp paste. Simmer 20 min until thick and oily.","Preheat grill or grill pan to medium-high. Brush with oil.","Grill satay skewers 4-5 min per side, turning carefully, until charred and cooked through.","Serve satay on plate, pour warm peanut sauce over or serve on side. Include lontong/rice, pickled vegetables, and extra kecap manis for dipping."]},
+    {id:16,name:"Gado-Gado",country:"indonesia",countryName:"Indonesia",image:"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600",description:"Indonesian vegetable salad with peanut sauce dressing, eggs, and tofu.",time:"45 mins",ingredients:["200g cabbage (blanched)","200g green beans (blanched)","200g bean sprouts (blanched)","2 carrots (julienned, blanched)","200g spinach (blanched and squeezed)","2 boiled potatoes (cubed)","2 hard-boiled eggs (quartered)","200g firm tofu (fried until golden)","100g tempeh (fried until golden)","2 tomatoes (wedged)","Cucumber slices","Peanut sauce: 1.5 cups roasted peanuts (ground), 200ml coconut milk, 2 shallots, 2 garlic, 2 red chilies, 1 tbsp tamarind, 1 tbsp palm sugar, 1/2 tsp shrimp paste, salt","Krupuk and fried shallots for topping"],instructions:["Blanch all vegetables separately in boiling salted water: cabbage 2 min, green beans 3 min, bean sprouts 30 sec, carrots 2 min, spinach 1 min. Drain and cool.","Fry tofu and tempeh cubes in hot oil until golden and crispy. Drain on paper towels.","For peanut sauce: Blend shallots, garlic, and chilies. Fry 2 min. Add ground peanuts, coconut milk, tamarind, palm sugar, shrimp paste, and salt. Simmer 15 min until thick.","Arrange vegetables on large platter: group each vegetable separately for visual appeal.","Place fried tofu, tempeh, boiled potatoes, and egg quarters around the vegetables.","Pour warm peanut sauce generously over everything just before serving.","Top with tomato wedges, cucumber slices, krupuk, and fried shallots. Serve immediately while sauce is warm."]},
+    {id:17,name:"Soto Ayam",country:"indonesia",countryName:"Indonesia",image:"https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",description:"Indonesian turmeric chicken soup with vermicelli, boiled eggs, and fried shallots.",time:"1 hour",ingredients:["1 whole chicken (about 1.5kg)","2 liters water","3 shallots","5 garlic cloves","3cm ginger","3cm turmeric (or 2 tsp powder)","2 lemongrass stalks (bruised)","4 kaffir lime leaves","2 salam leaves (Indonesian bay leaves, or regular bay leaves)","1 tsp white peppercorns","Salt to taste","200g rice vermicelli (soaked)","4 hard-boiled eggs (halved)","2 tomatoes (wedged)","Celery leaves (chopped)","Fried shallots","Lime wedges","Sambal and kecap manis for serving"],instructions:["Boil chicken in water with salam leaves, lemongrass, and salt. Simmer 30 min until chicken is cooked. Remove chicken, shred meat, set aside. Reserve broth.","Blend shallots, garlic, ginger, and turmeric into smooth paste.","Heat oil in pot. Fry spice paste 5 min until fragrant. Add kaffir lime leaves and peppercorns.","Pour in reserved chicken broth (about 1.5 liters). Bring to boil, then simmer 20 min. Season with salt.","Blanch soaked vermicelli in boiling water 1 min. Drain and divide into bowls.","Top vermicelli with shredded chicken, egg halves, and tomato wedges.","Ladle hot broth over everything. Garnish with celery leaves, fried shallots, and lime wedges.","Serve with sambal and kecap manis on the side for guests to adjust flavor."]},
+    {id:18,name:"Nasi Uduk",country:"indonesia",countryName:"Indonesia",image:"https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600",description:"Jakarta-style fragrant coconut rice served with fried chicken, sambal, and tempeh.",time:"1 hour",ingredients:["3 cups jasmine rice","1 can coconut milk (400ml)","2 pandan leaves","1 lemongrass stalk","2 salam leaves","1 ginger slice","1 tsp salt","Fried chicken pieces","Fried tempeh and tofu","Sambal terasi (shrimp paste chili sauce)","Fried peanuts","Cucumber and tomato slices","Krupuk","Serundeng (toasted spiced coconut flakes)"],instructions:["Wash rice and drain. Combine rice, coconut milk, pandan, lemongrass, salam leaves, ginger, and salt in rice cooker.","Add water to reach usual rice level. Cook until fluffy and aromatic.","Remove pandan, lemongrass, salam leaves, and ginger. Fluff rice gently.","Pack rice into small bowls, press down, and invert onto plates for dome shape.","Arrange fried chicken, tempeh, and tofu around the rice dome.","Top rice with serundeng. Place sambal, peanuts, cucumber, tomato, and krupuk on the side.","Serve warm. The combination of coconut rice, crispy chicken, and spicy sambal is essential."]},
+    // AMERICA
+    {id:19,name:"Classic Cheeseburger",country:"america",countryName:"America",image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600",description:"Juicy beef patty with melted cheese, lettuce, tomato, and special sauce on a toasted bun.",time:"25 mins",ingredients:["500g ground beef (80/20 fat ratio)","4 burger buns","4 slices cheddar cheese","Lettuce leaves","4 tomato slices","Pickle slices","1 onion (thinly sliced rings)","Special sauce: 1/4 cup mayo, 2 tbsp ketchup, 1 tbsp mustard, 1 tsp pickle relish, 1/2 tsp garlic powder, salt and pepper","Salt and black pepper for patties","Butter for toasting buns"],instructions:["Mix ground beef gently with salt and pepper. Divide into 4 equal portions. Form into patties slightly larger than buns (they shrink when cooking). Make a small dent in center of each patty.","Mix all special sauce ingredients in bowl. Refrigerate until ready to use.","Split buns and spread butter on cut sides. Toast in pan or under broiler until golden.","Heat cast iron skillet or grill to high heat. Cook patties 3-4 min per side for medium.","In last minute of cooking, place cheese slice on each patty. Cover with lid or foil to melt cheese.","Spread special sauce on bottom bun. Layer lettuce, tomato, patty with melted cheese, onions, and pickles.","Spread more sauce on top bun. Assemble burger and serve immediately with fries."]},
+    {id:20,name:"Mac and Cheese",country:"america",countryName:"America",image:"https://images.unsplash.com/photo-1543339494-b4cd4f7ba686?w=600",description:"Creamy, cheesy pasta bake with a crispy breadcrumb topping.",time:"45 mins",ingredients:["400g elbow macaroni","4 tbsp butter","4 tbsp all-purpose flour","4 cups whole milk (warmed)","2 cups sharp cheddar cheese (shredded)","1 cup gruyere cheese (shredded)","1/2 cup parmesan cheese (grated)","1 tsp mustard powder","1/2 tsp paprika","1/4 tsp nutmeg","Salt and white pepper","Topping: 1/2 cup breadcrumbs, 2 tbsp melted butter, 1/4 cup parmesan"],instructions:["Cook macaroni in salted boiling water 2 min less than package instructions. Drain and set aside.","Preheat oven to 180C (350F). Butter a large baking dish.","Make roux: Melt butter in large pot. Add flour, whisk constantly for 2 min until smooth and bubbling.","Gradually add warm milk, whisking continuously to prevent lumps. Cook until thickened (5-7 min).","Remove from heat. Add cheddar, gruyere, and parmesan. Stir until completely melted and smooth.","Add mustard powder, paprika, nutmeg, salt, and white pepper. Taste and adjust seasoning.","Add cooked macaroni to cheese sauce. Stir until every piece is coated.","Pour into baking dish. Mix breadcrumbs with melted butter and parmesan. Sprinkle evenly over top.","Bake 25-30 min until bubbling and top is golden brown. Let rest 5 min before serving."]},
+    {id:21,name:"Fried Chicken",country:"america",countryName:"America",image:"https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600",description:"Crispy, golden Southern-style fried chicken with a spicy buttermilk marinade.",time:"12 hours (including marinade)",ingredients:["1 whole chicken (cut into 8 pieces) or 8 drumsticks/thighs","2 cups buttermilk","2 tbsp hot sauce (Louisiana style)","2 cups all-purpose flour","1 tbsp paprika","1 tbsp garlic powder","1 tbsp onion powder","1 tsp cayenne pepper","1 tsp black pepper","1 tsp salt","1 tsp baking powder","Oil for deep frying (peanut or vegetable)"],instructions:["Mix buttermilk and hot sauce in large bowl. Add chicken pieces, ensuring fully submerged. Cover and refrigerate overnight (minimum 4 hours).","Mix flour, paprika, garlic powder, onion powder, cayenne, black pepper, salt, and baking powder in large shallow dish.","Remove chicken from buttermilk, letting excess drip off. Dredge each piece thoroughly in seasoned flour. Shake off excess.","Place coated chicken on wire rack. Let sit 15 min so coating adheres.","Heat oil in deep pot or Dutch oven to 170C (340F). Use enough oil to submerge chicken halfway.","Fry chicken in batches (don't overcrowd) for 12-15 min, turning once, until deep golden brown and internal temp reaches 74C.","Drain on wire rack over baking sheet (not paper towels - they make it soggy).","Rest 5 min before serving. Serve with coleslaw, biscuits, and gravy."]},
+    {id:22,name:"BBQ Ribs",country:"america",countryName:"America",image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=600",description:"Slow-smoked pork ribs with a sweet and tangy barbecue sauce.",time:"5 hours",ingredients:["2 racks pork baby back ribs (about 2kg total)","Dry rub: 1/4 cup brown sugar, 2 tbsp paprika, 1 tbsp garlic powder, 1 tbsp onion powder, 1 tbsp black pepper, 1 tbsp salt, 1 tsp cayenne, 1 tsp cumin, 1 tsp mustard powder","BBQ sauce: 1 cup ketchup, 1/2 cup brown sugar, 1/4 cup apple cider vinegar, 2 tbsp Worcestershire sauce, 1 tbsp mustard, 1 tsp smoked paprika, 1/2 tsp liquid smoke (optional)","Aluminum foil","Apple juice for spritzing"],instructions:["Remove membrane from back of ribs by sliding knife under it and pulling it off with paper towel.","Mix all dry rub ingredients. Coat ribs generously on all sides. Wrap in plastic and refrigerate 2 hours (or overnight).","Prepare smoker or oven to 120C (250F). If using oven, place roasting pan with water on bottom rack.","Place ribs on smoker/oven rack, bone side down. Smoke/cook for 3 hours.","Spritz ribs with apple juice every hour to keep moist.","Wrap ribs tightly in foil with 1/4 cup apple juice. Return to smoker/oven for 2 more hours.","While ribs cook, make BBQ sauce: Simmer all sauce ingredients 15 min until thickened.","Unwrap ribs, brush generously with BBQ sauce. Return unwrapped for final 30 min to set sauce.","Let rest 10 min. Slice between bones and serve with extra sauce on side."]},
+    {id:23,name:"Clam Chowder",country:"america",countryName:"America",image:"https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",description:"Creamy New England-style clam chowder with potatoes, bacon, and fresh clams.",time:"1 hour",ingredients:["1kg fresh clams (or 2 cans chopped clams with juice)","200g bacon (diced)","1 large onion (diced)","2 celery stalks (diced)","3 potatoes (peeled, cubed)","3 cups clam juice or fish stock","2 cups heavy cream","1 cup whole milk","4 tbsp butter","4 tbsp all-purpose flour","2 bay leaves","1 tsp dried thyme","Salt and black pepper","Oyster crackers for serving","Chopped parsley for garnish"],instructions:["If using fresh clams: Scrub clean. Steam in 1 cup water until they open (5-7 min). Reserve juice. Remove meat from shells, chop roughly. Strain juice through cheesecloth.","Cook bacon in large pot until crispy. Remove bacon, reserve drippings.","Add butter to bacon drippings. Add onion and celery. Saute until soft (5 min).","Add flour, stir constantly for 2 min to make roux. Gradually whisk in clam juice/stock.","Add potatoes, bay leaves, and thyme. Bring to boil, then simmer 15 min until potatoes are tender.","Add clams, heavy cream, and milk. Simmer gently 5 min. Do not boil after adding cream.","Season with salt and pepper. Remove bay leaves. Chowder should be thick and creamy.","Serve in bowls, top with crispy bacon, parsley, and oyster crackers on the side."]},
+    {id:24,name:"Apple Pie",country:"america",countryName:"America",image:"https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?w=600",description:"Classic American double-crust pie with cinnamon-spiced apple filling.",time:"1 hour 30 mins",ingredients:["For crust: 2.5 cups all-purpose flour, 1 tsp salt, 1 tbsp sugar, 1 cup cold butter (cubed), 6-8 tbsp ice water","For filling: 6-8 Granny Smith apples (peeled, cored, sliced), 3/4 cup sugar, 2 tbsp all-purpose flour, 1 tsp cinnamon, 1/4 tsp nutmeg, 1/4 tsp allspice, 1 tbsp lemon juice, 2 tbsp butter (cubed)","Egg wash: 1 egg beaten with 1 tbsp milk","Coarse sugar for sprinkling"],instructions:["Make crust: Mix flour, salt, and sugar. Cut in cold butter with pastry cutter until mixture resembles coarse crumbs with pea-sized butter pieces.","Add ice water 1 tbsp at a time, mixing until dough just comes together. Divide in half, shape into disks, wrap, and chill 1 hour.","Preheat oven to 200C (400F). Roll one disk into 12-inch circle. Fit into 9-inch pie dish, leaving overhang.","Mix sliced apples with sugar, flour, cinnamon, nutmeg, allspice, and lemon juice. Mound into crust. Dot with butter cubes.","Roll second disk into 12-inch circle. Place over filling. Trim overhang to 1/2 inch, fold under, and crimp edges.","Cut vents in top crust. Brush with egg wash and sprinkle with coarse sugar.","Bake 20 min at 200C. Reduce to 175C (350F) and bake 35-45 min more until crust is golden and filling bubbles.","Cool completely on wire rack (at least 3 hours) before slicing so filling sets."]},
+
+    // COLOMBIA
+    {id:25,name:"Bandeja Paisa",country:"colombia",countryName:"Colombia",image:"https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=600",description:"Colombia's national dish - a massive platter with beans, rice, meat, plantain, avocado, and egg.",time:"2 hours",ingredients:["2 cups pinto beans (soaked overnight)","200g chorizo (sliced)","200g morcilla (blood sausage, sliced)","200g ground beef","200g pork belly (chicharron)","4 cups cooked white rice","4 fried eggs","2 ripe plantains (sliced and fried)","2 avocados (sliced)","4 arepas (corn cakes)","1 tomato (chopped)","1 onion (chopped)","2 garlic cloves (minced)","1 tsp cumin","Salt and pepper","Lime wedges and cilantro for serving"],instructions:["Cook soaked beans in fresh water with half the onion, tomato, garlic, cumin, and salt. Simmer 1.5 hours until tender. Mash some beans against pot to thicken.","Fry pork belly in its own fat until crispy chicharron forms. Drain on paper towels.","In same pan, fry chorizo and morcilla slices until browned. Remove and keep warm.","Cook ground beef in pan with remaining onion, tomato, and garlic. Season with salt, pepper, and cumin. Cook until browned.","Fry plantain slices in oil until golden and caramelized on both sides.","Fry eggs sunny-side up in butter.","Heat arepas on dry pan or grill until slightly charred.","Assemble massive platter: Place rice and beans side by side. Arrange chicharron, chorizo, morcilla, ground beef, plantain, avocado slices, and arepa around.","Top with fried egg in center. Garnish with cilantro and lime wedges. Serve immediately."]},
+    {id:26,name:"Ajiaco",country:"colombia",countryName:"Colombia",image:"https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",description:"Bogota's signature chicken and potato soup with three types of potatoes and corn.",time:"1 hour 30 mins",ingredients:["1 whole chicken (about 1.5kg, cut into pieces)","3 liters water","3 types potatoes: 3 papa criolla (small yellow), 3 sabanera (red), 3 pastusa (Russet)","2 ears corn (cut into 3 pieces each)","1/2 cup guascas (Colombian herb, or substitute dried oregano)","2 stalks scallions (chopped)","2 garlic cloves (minced)","1/2 cup heavy cream","2 avocados (sliced)","1/2 cup capers","Salt and pepper"],instructions:["Boil chicken in water with scallions, garlic, and salt. Simmer 45 min until chicken is tender. Remove chicken, shred meat, discard skin and bones. Reserve broth.","Add corn pieces to broth. Simmer 15 min.","Add all potatoes. Papa criolla will dissolve and thicken soup. Sabanera and pastusa will remain chunky. Simmer 30 min until potatoes are very soft.","Add shredded chicken back to soup. Add guascas (or oregano). Simmer 10 more min.","Season with salt and pepper. The soup should be thick from dissolved potatoes.","Serve in large bowls. Place avocado slices, capers, and heavy cream on the side.","Each diner adds cream, avocado, and capers to their bowl according to taste."]},
+    {id:27,name:"Empanadas Colombianas",country:"colombia",countryName:"Colombia",image:"https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=600",description:"Crispy corn flour pastries filled with seasoned beef and potatoes.",time:"1 hour",ingredients:["For dough: 2 cups precooked corn flour (masarepa), 2 cups warm water, 1 tsp salt, 1 tbsp butter","For filling: 300g ground beef, 2 potatoes (boiled and mashed), 1 onion (finely chopped), 2 garlic cloves (minced), 1 tomato (finely chopped), 1 tsp cumin, 1/2 tsp paprika, salt and pepper, 2 tbsp oil","Oil for deep frying","Aji (spicy Colombian salsa) for serving"],instructions:["Make filling: Heat oil, saute onion and garlic until soft. Add tomato, cook 3 min.","Add ground beef, breaking up with spoon. Cook until browned. Add cumin, paprika, salt, and pepper.","Mix in mashed potatoes. The filling should be thick and hold together. Cool completely.","Make dough: Mix corn flour, salt, and butter. Add warm water gradually, kneading until smooth and pliable (not sticky).","Divide dough into 12 balls. Flatten each into thin circle (about 4 inches diameter).","Place 1-2 tbsp filling in center. Fold over to make half-moon shape. Press edges firmly to seal. Crimp with fork.","Heat oil to 180C (350F). Fry empanadas in batches 3-4 min per side until deep golden and crispy.","Drain on paper towels. Serve hot with aji (spicy salsa) on the side."]},
+    {id:28,name:"Sancocho",country:"colombia",countryName:"Colombia",image:"https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",description:"Hearty Colombian stew with multiple meats, plantains, yuca, and corn.",time:"2 hours",ingredients:["500g beef chuck (cubed)","500g pork ribs (cut into pieces)","2 chicken thighs","2 liters water","2 green plantains (peeled, cut into chunks)","2 ripe plantains (peeled, cut into chunks)","300g yuca (cassava, peeled, cut into chunks)","2 ears corn (cut into pieces)","2 potatoes (cubed)","1 onion (quartered)","2 garlic cloves","2 scallions","1/2 cup cilantro","1 tsp cumin","Salt and pepper","Avocado and rice for serving"],instructions:["In large pot, bring water to boil. Add beef and pork ribs. Simmer 30 min, skimming foam from top.","Add chicken thighs, onion, garlic, scallions, and cumin. Simmer 30 more min.","Add green plantains and yuca. Simmer 20 min.","Add potatoes, ripe plantains, and corn. Simmer 20 min until all vegetables are tender.","Remove chicken, shred meat, discard bones. Return meat to pot.","Season with salt and pepper. Add chopped cilantro.","Serve in large bowls. Each bowl should have pieces of beef, pork, chicken, and assortment of vegetables.","Serve with sliced avocado and white rice on the side. Add hot sauce if desired."]},
+    {id:29,name:"Arepas",country:"colombia",countryName:"Colombia",image:"https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600",description:"Grilled corn cakes that are a staple of Colombian cuisine, crispy outside and soft inside.",time:"30 mins",ingredients:["2 cups precooked corn flour (masarepa or arepa flour)","2.5 cups warm water","1 tsp salt","1 cup grated mozzarella cheese (optional, for stuffed arepas)","2 tbsp butter","Butter and cheese for serving"],instructions:["Mix corn flour and salt in large bowl. Gradually add warm water, mixing with hands until smooth dough forms.","Knead 3-4 min until dough is soft and pliable. It should not crack when pressed.","Divide into 8 portions. Roll into balls, then flatten into discs about 1/2 inch thick and 4 inches diameter.","For cheese arepas: Make a dent in center of disc, add 2 tbsp grated cheese, fold edges to seal, and flatten again gently.","Heat butter on griddle or non-stick pan over medium heat.","Cook arepas 5-7 min per side until golden brown crust forms and they sound hollow when tapped.","For extra crispy exterior, finish under broiler for 2 min per side.","Serve hot with butter spread on top, or split open and stuff with more cheese, eggs, or meat."]},
+    {id:30,name:"Lechona Tolimense",country:"colombia",countryName:"Colombia",image:"https://images.unsplash.com/photo-1432139509613-5c4255815697?w=600",description:"Whole roasted pig stuffed with rice, peas, and spices - a festive Colombian dish.",time:"8 hours",ingredients:["1 whole suckling pig (about 8-10kg, cleaned and deboned, or use pork shoulder as substitute)","3 cups long-grain rice","2 cups green peas","500g pork meat (diced)","2 onions (finely chopped)","4 garlic cloves (minced)","2 tbsp cumin","1 tbsp paprika","1/4 cup salt","2 bunches scallions (chopped)","1 bunch cilantro (chopped)","Banana leaves for wrapping"],instructions:["Mix rice, peas, diced pork, onions, garlic, cumin, paprika, salt, scallions, and cilantro in large bowl. This is the stuffing.","If using whole pig: Sew belly opening, leaving enough space to stuff. If using pork shoulder: Make deep pocket by cutting along bone.","Stuff pig/shoulder tightly with rice mixture. Sew or truss closed securely.","Wrap completely in banana leaves, then in aluminum foil.","Place in large roasting pan. Roast at 150C (300F) for 6-8 hours until skin is crispy and internal temp reaches 82C.","If using shoulder, increase heat to 200C (400F) for last 30 min to crisp skin.","Let rest 20 min before carving. The rice inside should be fully cooked and infused with pork juices.","Serve slices of pork with generous portions of the stuffed rice. Traditional accompaniment is arepa and hogao (tomato-onion sauce)."]},
+    // SAUDI ARABIA
+    {id:31,name:"Kabsa",country:"saudi",countryName:"Saudi Arabia",image:"https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600",description:"Saudi national dish - spiced rice with slow-cooked lamb, chicken, or camel, topped with nuts.",time:"2 hours",ingredients:["1kg lamb shoulder (cubed) or whole chicken","3 cups basmati rice (soaked 30 min)","2 onions (sliced)","4 tomatoes (chopped)","3 tbsp kabsa spice mix (or: 1 tbsp cardamom, 1 tbsp black pepper, 1 tsp cinnamon, 1 tsp cloves, 1 tsp coriander, 1/2 tsp nutmeg, 1/2 tsp turmeric)","2 bay leaves","4 cardamom pods","2 cinnamon sticks","3 cloves","2 dried limes (loomi)","1/4 cup raisins","1/4 cup almonds (toasted)","1/4 cup pine nuts (toasted)","3 tbsp oil or ghee","Salt to taste"],instructions:["Heat oil in large pot. Brown lamb/chicken pieces on all sides. Remove and set aside.","In same pot, saute onions until golden. Add tomatoes and cook until soft.","Add kabsa spices, bay leaves, cardamom, cinnamon, cloves, and dried limes. Stir for 1 min until fragrant.","Return meat to pot. Add enough water to cover. Bring to boil, then reduce heat and simmer 1 hour (lamb) or 30 min (chicken) until tender.","Remove meat and keep warm. Strain broth and measure 4.5 cups. Return to pot.","Add soaked rice to broth. Bring to boil, then reduce to low. Cover and cook 20 min until rice is fluffy.","Fluff rice with fork. Arrange on large platter. Place meat on top.","Garnish with toasted almonds, pine nuts, and raisins. Serve with dakous (tomato-chili sauce) and yogurt on the side."]},
+    {id:32,name:"Mandi",country:"saudi",countryName:"Saudi Arabia",image:"https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600",description:"Yemeni-origin dish of rice and meat cooked underground in a tandoor, now popular across Saudi Arabia.",time:"3 hours",ingredients:["1kg lamb or chicken (whole or large pieces)","3 cups basmati rice (soaked 30 min)","2 onions (sliced)","4 tomatoes (pureed)","3 tbsp mandi spice mix (or: 1 tbsp cumin, 1 tbsp coriander, 1 tsp cardamom, 1 tsp black pepper, 1/2 tsp cloves, 1/2 tsp nutmeg, 1/2 tsp turmeric, 1/2 tsp saffron)","2 bay leaves","3 cardamom pods","2 cinnamon sticks","2 dried limes","1/4 cup fried onions (for garnish)","1/4 cup raisins and almonds (for garnish)","3 tbsp oil or ghee","Salt to taste","Coal and oil for smoking (optional, for authentic flavor)"],instructions:["Marinate meat with half the spices, salt, and some oil. Let sit 1 hour.","Heat oil in large heavy pot. Saute onions until golden. Add tomato puree and remaining spices.","Add meat and enough water to cover. Bring to boil, then simmer covered 1.5 hours (lamb) or 45 min (chicken) until very tender.","Remove meat, wrap in foil to keep warm. Strain broth.","Add soaked rice to broth (use 1.5 parts broth to 1 part rice). Add bay leaves, cardamom, cinnamon, and dried limes.","Bring to boil, then reduce to lowest heat. Cover tightly and cook 20 min until rice is done.","For smoking (optional): Place small piece of hot coal in foil bowl in center of rice. Drizzle with oil and cover immediately for 5 min.","Fluff rice, arrange on platter. Place meat on top. Garnish with fried onions, raisins, and almonds."]},
+    {id:33,name:"Shawarma",country:"saudi",countryName:"Saudi Arabia",image:"https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=600",description:"Spit-roasted marinated meat sliced thin and wrapped in flatbread with garlic sauce and pickles.",time:"4 hours (including marinade)",ingredients:["800g chicken thighs (boneless, thinly sliced) or lamb","Marinade: 1/2 cup yogurt, 3 tbsp lemon juice, 4 garlic cloves (minced), 2 tbsp olive oil, 1 tbsp vinegar, 1 tsp cumin, 1 tsp coriander, 1 tsp paprika, 1/2 tsp turmeric, 1/2 tsp cinnamon, 1/4 tsp cardamom, salt and pepper","Toum (garlic sauce): 1 cup garlic cloves, 2 cups vegetable oil, 1/4 cup lemon juice, 1/2 tsp salt","Flatbread or pita","Pickled cucumbers and turnips","Tomato slices","Onion slices","Lettuce or parsley","French fries (optional, inside wrap)"],instructions:["Mix all marinade ingredients. Coat meat slices thoroughly. Marinate at least 3 hours, preferably overnight.","For toum: Blend garlic and salt in food processor until paste forms. With processor running, slowly drizzle in oil in thin stream (like making mayonnaise). Add lemon juice gradually. Should be thick and fluffy.","Thread marinated meat onto skewers or arrange on baking sheet in overlapping layers to mimic spit.","Grill on high heat or broil in oven 5-6 min per side until charred and cooked through.","Let meat rest 2 min, then slice thinly against the grain.","Warm flatbread. Spread toum generously. Layer meat, pickles, tomato, onion, and lettuce.","Add fries if desired. Roll tightly, wrap in foil, and serve with extra toum and pickles."]},
+    {id:34,name:"Harees",country:"saudi",countryName:"Saudi Arabia",image:"https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",description:"Wheat and meat porridge, a traditional Saudi dish especially during Ramadan and special occasions.",time:"3 hours",ingredients:["2 cups harees wheat (or pearled wheat/barley, soaked overnight)","500g lamb or chicken (bone-in pieces)","8 cups water or chicken stock","2 onions (finely chopped)","3 cardamom pods","2 cinnamon sticks","3 cloves","1 tsp black pepper","1/2 cup ghee or clarified butter","Salt to taste","Cinnamon powder and ghee for topping"],instructions:["Soak wheat overnight. Drain and rinse.","In large pot, combine wheat, meat, water/stock, onions, cardamom, cinnamon, cloves, pepper, and salt.","Bring to boil, then reduce to very low heat. Simmer covered 2.5-3 hours, stirring occasionally.","As it cooks, wheat will break down and absorb liquid. Add more hot water if needed to prevent sticking.","When meat is very tender, remove bones and shred meat with forks. Return to pot.","Continue cooking and stirring vigorously with wooden spoon (or use potato masher) until mixture becomes smooth, thick porridge consistency.","The harees should be thick enough to hold its shape but still moist. Adjust with hot water if too thick.","Serve in deep bowls. Make a well in center and pour melted ghee into it. Sprinkle with cinnamon powder.","Eat hot, mixing the ghee and cinnamon into each spoonful."]},
+    {id:35,name:"Mutabbaq",country:"saudi",countryName:"Saudi Arabia",image:"https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600",description:"Stuffed savory pancake with minced meat, eggs, and vegetables, folded into a square package.",time:"1 hour",ingredients:["For dough: 3 cups all-purpose flour, 1 cup warm water, 1/2 tsp salt, 2 tbsp oil","For filling: 300g minced lamb or beef, 2 onions (finely chopped), 2 tomatoes (finely chopped), 2 eggs (beaten), 1/2 cup parsley (chopped), 1 tsp cumin, 1/2 tsp cinnamon, 1/2 tsp black pepper, salt, 2 tbsp oil","Oil for frying","Lemon wedges and tahini for serving"],instructions:["Make dough: Mix flour, salt, and oil. Add warm water gradually, kneading until smooth and elastic. Divide into 6 balls. Coat with oil, cover, and rest 30 min.","Make filling: Heat oil, saute onions until soft. Add minced meat, cook until browned. Add tomatoes, cumin, cinnamon, pepper, and salt. Cook 5 min until tomatoes break down. Cool slightly. Mix in beaten eggs and parsley.","On oiled surface, stretch one dough ball into very thin rectangle (almost transparent) by pulling and slapping.","Place 2-3 tbsp filling in center. Fold edges over filling to create square package: fold top and bottom to center, then left and right.","Heat oil on flat griddle or pan. Place mutabbaq seam-side down. Press gently to flatten.","Fry 3-4 min per side until golden brown and crispy.","Drain on paper towels. Serve hot with lemon wedges and tahini sauce for dipping."]},
+    {id:36,name:"Jareesh",country:"saudi",countryName:"Saudi Arabia",image:"https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600",description:"Crushed wheat porridge with meat and yogurt, a hearty Najdi specialty.",time:"2 hours",ingredients:["2 cups jareesh (crushed wheat, or use bulgur as substitute, soaked 2 hours)","500g lamb or chicken (cubed)","6 cups water or stock","1 large onion (finely chopped)","3 tomatoes (chopped)","2 tbsp tomato paste","1 cup plain yogurt","3 cardamom pods","2 cinnamon sticks","1 tsp black pepper","1/2 tsp cumin","1/4 cup ghee or butter","Salt to taste","Caramelized onions and pine nuts for garnish"],instructions:["Soak jareesh in water for 2 hours. Drain.","Heat ghee in large pot. Saute onion until golden. Add meat, brown on all sides.","Add tomatoes, tomato paste, cardamom, cinnamon, pepper, cumin, and salt. Cook 5 min.","Add soaked jareesh and water/stock. Bring to boil, then reduce heat.","Simmer covered 1.5 hours, stirring every 15 min. Jareesh will absorb liquid and become thick and creamy.","When meat is tender and jareesh is thick porridge consistency, reduce heat to low.","Stir in yogurt gradually, mixing well to prevent curdling. Cook 5 more min on very low heat.","The jareesh should be thick, creamy, and slightly tangy from yogurt. Adjust salt.","Serve in bowls, top with caramelized onions and toasted pine nuts. Drizzle with extra ghee if desired."]},
+    // POPULAR
+    {id:37,name:"Sushi Rolls",country:"popular",countryName:"⭐ Popular - Japan",image:"https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600",description:"Fresh fish and vinegared rice rolled in nori seaweed - one of the world's most popular foods.",time:"1 hour",ingredients:["2 cups sushi rice","2.5 cups water","1/3 cup rice vinegar","2 tbsp sugar","1 tsp salt","Nori sheets","200g fresh salmon or tuna (sashimi grade)","1 cucumber (julienned)","1 avocado (sliced)","Soy sauce, wasabi, and pickled ginger for serving","Bamboo sushi mat"],instructions:["Rinse rice until water runs clear. Cook with water in rice cooker or pot.","Mix rice vinegar, sugar, and salt in small saucepan. Heat until sugar dissolves. Cool.","When rice is done, transfer to wide bowl. Drizzle vinegar mixture over rice while fanning. Fold gently with wooden spoon. Cool to room temperature.","Place bamboo mat on counter. Lay nori sheet shiny-side down.","Wet hands with water (prevents sticking). Spread thin layer of rice over nori, leaving 1 inch at top edge.","Arrange fish, cucumber, and avocado in line across center of rice.","Using mat, roll tightly away from you, applying gentle pressure. Seal edge with water.","Let roll sit 2 min seam-side down. Slice into 6-8 pieces with sharp wet knife.","Serve with soy sauce, wasabi, and pickled ginger."]},
+    {id:38,name:"Margherita Pizza",country:"popular",countryName:"⭐ Popular - Italy",image:"https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600",description:"Classic Neapolitan pizza with tomato sauce, fresh mozzarella, and basil.",time:"2 hours",ingredients:["For dough: 3 cups bread flour, 1 cup warm water, 1 tsp sugar, 1 tsp salt, 1 packet active dry yeast, 2 tbsp olive oil","For sauce: 1 can San Marzano tomatoes (crushed), 1 garlic clove (minced), 1 tbsp olive oil, salt, pinch of sugar","200g fresh mozzarella (sliced)","Fresh basil leaves","Extra virgin olive oil for drizzling"],instructions:["Dissolve yeast and sugar in warm water. Let sit 5 min until foamy.","Mix flour and salt. Make well, pour in yeast mixture and olive oil. Mix until dough forms.","Knead 10 min until smooth and elastic. Place in oiled bowl, cover, and rise 1 hour until doubled.","For sauce: Simmer crushed tomatoes with garlic, olive oil, salt, and sugar for 15 min. Cool.","Preheat oven to highest setting (250C+). Place pizza stone or inverted baking sheet inside to heat.","Punch down dough, divide into 2. Roll each into thin circle (about 10 inches).","Transfer to parchment paper. Spread thin layer of sauce, leaving 1-inch border.","Arrange mozzarella slices. Drizzle with olive oil.","Slide onto hot stone. Bake 8-10 min until crust is charred and cheese is bubbling.","Remove, top with fresh basil leaves, drizzle with olive oil, and serve immediately."]},
+    {id:39,name:"Tacos al Pastor",country:"popular",countryName:"⭐ Popular - Mexico",image:"https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=600",description:"Mexican street tacos with marinated pork, pineapple, and fresh salsa.",time:"4 hours (including marinade)",ingredients:["800g pork shoulder (thinly sliced)","Marinade: 3 dried guajillo chilies, 2 dried ancho chilies, 1/2 pineapple (juiced), 1/4 cup white vinegar, 4 garlic cloves, 1 tsp cumin, 1 tsp oregano, 1/2 tsp cloves, salt","Corn tortillas","Pineapple chunks (grilled)","White onion (finely chopped)","Cilantro (chopped)","Lime wedges","Salsa verde or roja"],instructions:["Toast dried chilies in dry pan 30 sec per side. Soak in hot water 15 min. Drain.","Blend soaked chilies with pineapple juice, vinegar, garlic, cumin, oregano, cloves, and salt until smooth.","Marinate pork slices in chili mixture for at least 3 hours.","Cook pork on hot griddle or grill 3-4 min per side until charred and cooked through.","Warm tortillas on dry pan or directly over flame until slightly charred.","Assemble tacos: Place pork on tortilla, top with grilled pineapple, onion, and cilantro.","Squeeze lime over top. Serve with salsa on the side."]},
+    {id:40,name:"Pad Thai",country:"popular",countryName:"⭐ Popular - Thailand",image:"https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600",description:"Thailand's famous stir-fried rice noodles with shrimp, tofu, peanuts, and tangy tamarind sauce.",time:"30 mins",ingredients:["200g rice noodles (pad thai)","150g shrimp (peeled)","100g firm tofu (cubed)","2 eggs","3 tbsp tamarind paste","3 tbsp fish sauce","2 tbsp palm sugar (or brown sugar)","1 tbsp lime juice","1/4 tsp chili flakes","3 garlic cloves (minced)","2 shallots (sliced)","1 cup bean sprouts","2 spring onions (cut into 2-inch pieces)","1/4 cup roasted peanuts (crushed)","Lime wedges and cilantro for serving"],instructions:["Soak rice noodles in warm water 30 min until pliable but not soft. Drain.","Mix tamarind paste, fish sauce, palm sugar, lime juice, and chili flakes. Set aside.","Heat oil in wok on high. Add garlic and shallots. Stir-fry 30 sec.","Add shrimp and tofu. Cook 2 min until shrimp are pink.","Push ingredients aside. Crack eggs into empty space, scramble quickly.","Add drained noodles and sauce. Toss everything together on high heat 2-3 min.","Add bean sprouts and spring onions. Toss 30 sec.","Transfer to plate. Top with crushed peanuts, cilantro, and lime wedge."]},
+    {id:41,name:"Pho",country:"popular",countryName:"⭐ Popular - Vietnam",image:"https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=600",description:"Vietnamese beef noodle soup with aromatic broth, thinly sliced beef, and fresh herbs.",time:"6 hours",ingredients:["For broth: 1kg beef bones, 500g beef chuck, 1 onion (charred), 5cm ginger (charred), 3 star anise, 2 cinnamon sticks, 3 cardamom pods, 1 tbsp coriander seeds, 1 tbsp fennel seeds, 1/4 cup fish sauce, 2 tbsp sugar, salt","200g rice noodles (pho)","200g beef sirloin (very thinly sliced, raw)","Bean sprouts, Thai basil, cilantro, mint","Lime wedges, sliced chili, hoisin sauce, sriracha"],instructions:["Char onion and ginger over open flame or under broiler until blackened. Scrape off char, rinse.","Boil bones in water 10 min. Drain and rinse bones. This removes impurities.","Place bones, chuck, charred onion, ginger, and all spices in large pot. Cover with 4 liters water.","Bring to boil, then reduce to gentle simmer. Skim foam for first 30 min.","Simmer uncovered 4-5 hours. Broth should be clear and deeply flavored.","Remove chuck, slice thinly. Strain broth through cheesecloth. Season with fish sauce, sugar, and salt.","Soak rice noodles in hot water 20 min. Drain.","Place raw beef slices and cooked chuck in bowl. Add noodles.","Ladle boiling hot broth over everything. The heat will cook the raw beef slices.","Serve with bean sprouts, herbs, lime, chili, hoisin, and sriracha on the side."]},
+    {id:42,name:"Falafel",country:"popular",countryName:"⭐ Popular - Middle East",image:"https://images.unsplash.com/photo-1593001872095-7d5f5c731b3e?w=600",description:"Crispy fried chickpea patties with herbs and spices, served in pita with tahini.",time:"12 hours (including soaking)",ingredients:["2 cups dried chickpeas (soaked overnight, NOT canned)","1 large onion (quartered)","4 garlic cloves","1 cup parsley (packed)","1 cup cilantro (packed)","2 tsp cumin","1 tsp coriander","1/2 tsp cayenne","1 tsp baking soda","Salt and pepper","Oil for deep frying","Pita bread, tahini sauce, tomato, cucumber, pickles, and salad for serving"],instructions:["Soak dried chickpeas in water overnight (12 hours). They will triple in size. Do NOT use canned chickpeas.","Drain chickpeas well. They should be completely dry.","Add chickpeas, onion, garlic, parsley, and cilantro to food processor. Pulse until finely ground but not pureed.","Add cumin, coriander, cayenne, baking soda, salt, and pepper. Pulse to combine.","Transfer to bowl, cover, and refrigerate 1 hour. This helps mixture firm up.","Form mixture into small balls or patties (about 2 tbsp each). Press firmly so they hold together.","Heat oil to 180C (350F). Fry falafel in batches 3-4 min until deep golden and crispy.","Drain on paper towels. They should be crispy outside, green and fluffy inside.","Serve in pita bread with tahini sauce, tomato, cucumber, pickles, and shredded salad."]},
+];
+
+const popularIds = [37,38,39,40,41,42];
+let currentFilter = 'all';
+let searchTerm = '';
+
+function createBgAnimation() {
+    const container = document.getElementById('bgAnimation');
+    for (let i = 0; i < 20; i++) {
+        const span = document.createElement('span');
+        span.style.left = Math.random() * 100 + '%';
+        span.style.animationDelay = Math.random() * 25 + 's';
+        span.style.animationDuration = (20 + Math.random() * 10) + 's';
+        span.style.width = (10 + Math.random() * 20) + 'px';
+        span.style.height = span.style.width;
+        container.appendChild(span);
+    }
+}
+
+function renderRecipes() {
+    const grid = document.getElementById('recipeGrid');
+    const title = document.getElementById('sectionTitle');
+    grid.innerHTML = '';
+
+    let filtered = recipes;
+
+    if (currentFilter === 'popular') {
+        filtered = recipes.filter(r => popularIds.includes(r.id));
+        title.textContent = '⭐ Popular Foods From Around The World';
+    } else if (currentFilter !== 'all') {
+        filtered = recipes.filter(r => r.country === currentFilter);
+        const countryNames = {malaysia:'Malaysia',india:'India',indonesia:'Indonesia',america:'America',colombia:'Colombia',saudi:'Saudi Arabia'};
+        const flags = {malaysia:'🇲🇾',india:'🇮🇳',indonesia:'🇮🇩',america:'🇺🇸',colombia:'🇨🇴',saudi:'🇸🇦'};
+        title.textContent = flags[currentFilter] + ' ' + countryNames[currentFilter] + ' Recipes';
+    } else {
+        title.textContent = '🌍 All Recipes';
+    }
+
+    if (searchTerm) {
+        filtered = filtered.filter(r => 
+            r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.ingredients.some(i => i.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+        title.textContent = '🔍 Search Results for "' + searchTerm + '"';
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="no-results"><h3>No recipes found</h3><p>Try a different search term or country.</p></div>';
+        return;
+    }
+
+    filtered.forEach(recipe => {
+        const card = document.createElement('div');
+        card.className = 'recipe-card';
+        card.onclick = () => openRecipe(recipe.id);
+        card.innerHTML = `
+            <img class="recipe-image" src="${recipe.image}" alt="${recipe.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600'">
+            <div class="recipe-info">
+                <div class="recipe-name">${recipe.name}</div>
+                <div class="recipe-country">${recipe.countryName}</div>
+                <div class="recipe-desc">${recipe.description}</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function filterByCountry(country) {
+    currentFilter = country;
+    searchTerm = '';
+    document.getElementById('searchBar').value = '';
+
+    document.querySelectorAll('.country-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.country === country) tab.classList.add('active');
+    });
+
+    renderRecipes();
+    window.scrollTo({top: document.querySelector('.content-area').offsetTop - 20, behavior: 'smooth'});
+}
+
+function performSearch() {
+    searchTerm = document.getElementById('searchBar').value.trim();
+    currentFilter = 'all';
+    document.querySelectorAll('.country-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('[data-country="all"]').classList.add('active');
+    renderRecipes();
+    if (searchTerm) {
+        window.scrollTo({top: document.querySelector('.content-area').offsetTop - 20, behavior: 'smooth'});
+    }
+}
+
+document.getElementById('searchBar').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') performSearch();
+});
+
+function openRecipe(id) {
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe) return;
+
+    document.getElementById('modalImage').src = recipe.image;
+    document.getElementById('modalImage').onerror = function() { this.src = 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600'; };
+    document.getElementById('modalTitle').textContent = recipe.name;
+    document.getElementById('modalCountry').textContent = recipe.countryName + ' | ' + recipe.description;
+    document.getElementById('modalTime').innerHTML = '⏱️ ' + recipe.time;
+
+    const ingList = document.getElementById('modalIngredients');
+    ingList.innerHTML = '';
+    recipe.ingredients.forEach(ing => {
+        const li = document.createElement('li');
+        li.textContent = ing;
+        ingList.appendChild(li);
+    });
+
+    const instList = document.getElementById('modalInstructions');
+    instList.innerHTML = '';
+    recipe.instructions.forEach(inst => {
+        const li = document.createElement('li');
+        li.textContent = inst;
+        instList.appendChild(li);
+    });
+
+    document.getElementById('recipeModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('recipeModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+
+createBgAnimation();
+renderRecipes();
+</script>
+</body>
+</html>
